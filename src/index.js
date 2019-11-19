@@ -5,7 +5,7 @@ const Kefir = require('kefir');
 const kefirGlob = require('./kefir-glob');
 const kefirCopyFile = require('./kefir-copy-file');
 
-const jsAndJsxPattern = '**/*.{js,mjs,jsx,scss}';
+const jsAndJsxPattern = '**/*.{js,mjs,jsx,*.flow}';
 
 module.exports = function flowCopySource(sources, dest, options) {
   const verbose = options && options.verbose;
@@ -29,12 +29,18 @@ module.exports = function flowCopySource(sources, dest, options) {
         return filesToCopy.map(match => ({src, match}));
       })
     )
-    .flatMap(pair =>
-      kefirCopyFile(
+    .flatMap(pair => {
+      if (pair.match.slice(pair.match.length - 5, pair.match.length) === '.flow') {
+         return kefirCopyFile(
+          path.join(pair.src, pair.match),
+          path.join(dest, pair.match)
+        )
+      }
+      return kefirCopyFile(
         path.join(pair.src, pair.match),
         path.join(dest, pair.match+'.flow')
       )
-    )
+    })
     .takeErrors(1)
     .onValue(result => {
       if (verbose) {
